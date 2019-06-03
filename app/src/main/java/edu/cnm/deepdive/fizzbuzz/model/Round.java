@@ -1,10 +1,12 @@
 package edu.cnm.deepdive.fizzbuzz.model;
 
 import androidx.annotation.NonNull;
+import java.io.Serializable;
 
-public class Round {
+public class Round implements Serializable {
 
   private static final String FORMAT_STRING = "Value: %1$d; category: %2$s; selection: %3$s";
+  private static final long serialVersionUID = -4219534739377662816L;
 
   private final int value;
   private final Category category;
@@ -21,6 +23,22 @@ public class Round {
   @Override
   public String toString() {
     return String.format(FORMAT_STRING, value, category, selection);
+  }
+
+  public int getValue() {
+    return value;
+  }
+
+  public Category getCategory() {
+    return category;
+  }
+
+  public Category getSelection() {
+    return selection;
+  }
+
+  public boolean isCorrect() {
+    return category.equals(selection);
   }
 
   public enum Category {
