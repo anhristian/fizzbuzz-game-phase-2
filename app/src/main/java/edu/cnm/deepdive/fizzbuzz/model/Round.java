@@ -11,7 +11,7 @@ public class Round implements Serializable {
   private final int value;
   private final Category category;
   private final Category selection;
-  // TODO Record time for selection.
+  // TODO Record time for selection?
 
   public Round(int value, Category category, Category selection) {
     this.value = value;

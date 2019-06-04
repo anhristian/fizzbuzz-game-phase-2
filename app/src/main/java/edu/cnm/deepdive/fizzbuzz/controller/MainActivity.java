@@ -53,8 +53,8 @@ public class MainActivity extends AppCompatActivity
   private int gameDuration;
   private long gameTimerStart;
   private long gameTimeElapsed;
-  String gameDataKey;
-  String gameTimeElapsedKey;
+  private String gameDataKey;
+  private String gameTimeElapsedKey;
 
   /**
    * Initializes this activity when created, and when restored after {@link #onDestroy()} (for
@@ -81,7 +81,9 @@ public class MainActivity extends AppCompatActivity
       gameTimeElapsed = savedInstanceState.getLong(gameTimeElapsedKey, 0);
     }
     if (game == null) {
+      // TODO Combine invocations of Game constructor.
       game = new Game(timeLimit, numDigits, gameDuration);
+      gameTimeElapsed = 0;
     }
   }
 
@@ -91,7 +93,7 @@ public class MainActivity extends AppCompatActivity
   @Override
   protected void onResume() {
     super.onResume();
-    // TODO Resume game if running.
+    // TODO Resume game if running?
   }
 
   /**
@@ -222,7 +224,9 @@ public class MainActivity extends AppCompatActivity
   public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
     readSettings();
     pauseGame();
+    // TODO Combine invocations of Game constructor.
     game = new Game(timeLimit, numDigits, gameDuration);
+    gameTimeElapsed = 0;
   }
 
   private void readSettings() {
@@ -240,20 +244,19 @@ public class MainActivity extends AppCompatActivity
     stopValueTimer();
     stopGameTimer();
     valueDisplay.setText("");
-    // TODO Update any additional necessary fields.
     invalidateOptionsMenu();
   }
 
   private void resumeGame() {
     running = true;
     if (game == null) {
+      // TODO Combine invocations of Game constructor.
       game = new Game(timeLimit, numDigits, gameDuration);
       gameTimeElapsed = 0;
     }
     updateValue();
     startGameTimer();
     startValueTimer();
-    // TODO Update any additional necessary fields.
     invalidateOptionsMenu();
   }
 
