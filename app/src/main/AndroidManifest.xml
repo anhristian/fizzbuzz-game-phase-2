@@ -21,10 +21,10 @@
       android:parentActivityName=".controller.MainActivity"/>
     <activity
       android:launchMode="singleTop"
-      android:name=".controller.MainActivity">
+      android:name=".controller.MainActivity"
+      android:configChanges="orientation|screenSize|keyboardHidden">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
-
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
     </activity>

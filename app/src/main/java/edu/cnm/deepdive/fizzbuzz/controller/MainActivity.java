@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorInflater;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -55,6 +56,7 @@ public class MainActivity extends AppCompatActivity
   private long gameTimeElapsed;
   private String gameDataKey;
   private String gameTimeElapsedKey;
+  private String completeKey;
 
   /**
    * Initializes this activity when created, and when restored after {@link #onDestroy()} (for
@@ -66,24 +68,24 @@ public class MainActivity extends AppCompatActivity
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    // Note: If we use different layouts for different orientation, setContentView should be invoked
+    // from bind.
     setContentView(R.layout.activity_main);
-    valueDisplay = findViewById(R.id.value_display);
-    valueContainer = (ViewGroup) valueDisplay.getParent();
+    bind();
     detector = new GestureDetectorCompat(this, new FlingListener());
-    valueContainer.setOnTouchListener(this);
     preferences = PreferenceManager.getDefaultSharedPreferences(this);
     preferences.registerOnSharedPreferenceChangeListener(this);
     readSettings();
     gameDataKey = getString(R.string.game_data_key);
     gameTimeElapsedKey = getString(R.string.game_time_elapsed_key);
+    completeKey = getString(R.string.complete_key);
     if (savedInstanceState != null) {
       game = (Game) savedInstanceState.getSerializable(gameDataKey);
       gameTimeElapsed = savedInstanceState.getLong(gameTimeElapsedKey, 0);
+      complete = savedInstanceState.getBoolean(completeKey, false);
     }
     if (game == null) {
-      // TODO Combine invocations of Game constructor.
-      game = new Game(timeLimit, numDigits, gameDuration);
-      gameTimeElapsed = 0;
+      startGame();
     }
   }
 
@@ -94,6 +96,11 @@ public class MainActivity extends AppCompatActivity
   protected void onResume() {
     super.onResume();
     // TODO Resume game if running?
+  }
+
+  @Override
+  protected void onPostResume() {
+    super.onPostResume();
   }
 
   /**
@@ -116,6 +123,7 @@ public class MainActivity extends AppCompatActivity
     super.onSaveInstanceState(outState);
     outState.putSerializable(gameDataKey, game);
     outState.putLong(gameTimeElapsedKey, gameTimeElapsed);
+    outState.putBoolean(completeKey, complete);
   }
 
   /**
@@ -162,10 +170,7 @@ public class MainActivity extends AppCompatActivity
     Intent intent;
     switch (item.getItemId()) {
       case R.id.reset:
-        // TODO Combine invocations of Game constructor.
-        game = new Game(timeLimit, numDigits, gameDuration);
-        gameTimeElapsed = 0;
-        complete = false;
+        startGame();
         pauseGame();
         break;
       case R.id.play:
@@ -179,9 +184,7 @@ public class MainActivity extends AppCompatActivity
         startActivity(intent);
         break;
       case R.id.status:
-        intent = new Intent(this, StatusActivity.class);
-        intent.putExtra(getString(R.string.game_data_key), game);
-        startActivity(intent);
+        showStatistics();
         break;
       default:
         handled = super.onOptionsItemSelected(item);
@@ -223,10 +226,23 @@ public class MainActivity extends AppCompatActivity
   @Override
   public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
     readSettings();
+    startGame();
     pauseGame();
-    // TODO Combine invocations of Game constructor.
-    game = new Game(timeLimit, numDigits, gameDuration);
-    gameTimeElapsed = 0;
+  }
+
+  @Override
+  public void onConfigurationChanged(Configuration newConfig) {
+    super.onConfigurationChanged(newConfig);
+    bind();
+    if (running) {
+      displayValue();
+    }
+  }
+
+  private void bind() {
+    valueDisplay = findViewById(R.id.value_display);
+    valueContainer = (ViewGroup) valueDisplay.getParent();
+    valueContainer.setOnTouchListener(this);
   }
 
   private void readSettings() {
@@ -239,6 +255,13 @@ public class MainActivity extends AppCompatActivity
         res.getInteger(R.integer.game_time_default));
   }
 
+  private void startGame() {
+    game = new Game(timeLimit, numDigits, gameDuration);
+    gameTimeElapsed = 0;
+    complete = false;
+    running = false;
+  }
+
   private void pauseGame() {
     running = false;
     stopValueTimer();
@@ -248,16 +271,21 @@ public class MainActivity extends AppCompatActivity
   }
 
   private void resumeGame() {
-    running = true;
     if (game == null) {
-      // TODO Combine invocations of Game constructor.
-      game = new Game(timeLimit, numDigits, gameDuration);
-      gameTimeElapsed = 0;
+      startGame();
     }
-    updateValue();
+    running = true;
+    next();
     startGameTimer();
-    startValueTimer();
     invalidateOptionsMenu();
+  }
+
+  private void showStatistics() {
+    Intent intent = new Intent(this, StatusActivity.class);
+    intent.putExtra(gameDataKey, game);
+    intent.putExtra(gameTimeElapsedKey, gameTimeElapsed);
+    intent.putExtra(completeKey, complete);
+    startActivity(intent);
   }
 
   private void stopValueTimer() {
@@ -305,24 +333,21 @@ public class MainActivity extends AppCompatActivity
 
   private void updateValue() {
     int valueLimit = (int) Math.pow(10, numDigits) - 1;
-    int containerHeight = valueContainer.getHeight();
-    int containerWidth = valueContainer.getWidth();
-    int textHeight;
-    int textWidth;
-    String valueString;
     value = 1 + rng.nextInt(valueLimit);
-    valueString = Integer.toString(value);
+  }
+
+  private void next() {
+    updateValue();
+    displayValue();
+    startValueTimer();
+  }
+
+  private void displayValue() {
+    String valueString = Integer.toString(value);
     valueDisplay.setTranslationX(0);
     valueDisplay.setTranslationY(0);
     valueDisplay.setText(valueString);
-    // HACK This assumes text is centered in layout.
     valueDisplay.getPaint().getTextBounds(valueString, 0, valueString.length(), displayRect);
-    textHeight = displayRect.height();
-    textWidth = displayRect.width();
-    displayRect.top = (containerHeight - textHeight) / 2;
-    displayRect.bottom = (containerHeight + textHeight) / 2;
-    displayRect.left = (containerWidth - textWidth) / 2;
-    displayRect.right = (containerWidth + textWidth) / 2;
   }
 
   private void startValueTimer() {
@@ -344,8 +369,7 @@ public class MainActivity extends AppCompatActivity
     public void run() {
       runOnUiThread(() -> {
         recordRound(null);
-        updateValue();
-        startValueTimer();
+        next();
       });
     }
 
@@ -356,7 +380,10 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void run() {
       complete = true;
-      runOnUiThread(() -> pauseGame());
+      runOnUiThread(() -> {
+        pauseGame();
+        showStatistics();
+      });
     }
 
   }
@@ -405,8 +432,7 @@ public class MainActivity extends AppCompatActivity
           }
         }
         recordRound(selection);
-        updateValue();
-        startValueTimer();
+        next();
         handled = true;
       }
       return handled;
@@ -415,6 +441,14 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onDown(MotionEvent evt) {
       boolean handled = false;
+      int containerHeight = valueContainer.getHeight();
+      int containerWidth = valueContainer.getWidth();
+      int textHeight = displayRect.height();
+      int textWidth = displayRect.width();
+      displayRect.top = (containerHeight - textHeight) / 2;
+      displayRect.bottom = (containerHeight + textHeight) / 2;
+      displayRect.left = (containerWidth - textWidth) / 2;
+      displayRect.right = (containerWidth + textWidth) / 2;
       if (displayRect.contains(Math.round(evt.getX()), Math.round(evt.getY()))) {
         originX = evt.getX() - valueDisplay.getTranslationX();
         originY = evt.getY() - valueDisplay.getTranslationY();

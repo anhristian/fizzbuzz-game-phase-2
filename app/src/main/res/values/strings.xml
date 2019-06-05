@@ -26,6 +26,7 @@
 
   <string name="game_data_key">game_data</string>
   <string name="game_time_elapsed_key">game_time_elapsed</string>
+  <string name="complete_key">complete</string>
 
   <string name="fizz">Fizz</string>
   <string name="buzz">Buzz</string>
