@@ -12,4 +12,6 @@
   <integer name="game_time_increment">15</integer>
   <integer name="game_time_max">300</integer>
 
+  <integer name="selection_margin">50</integer>
+
 </resources>

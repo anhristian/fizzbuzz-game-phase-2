@@ -1,7 +1,5 @@
 package edu.cnm.deepdive.fizzbuzz.model;
 
-import java.util.Locale;
-
 /**
  * Includes several public methods and constants for computing FizzBuzz values.
  * <p>This class includes <code>static</code> methods that take <code>int</code> parameters

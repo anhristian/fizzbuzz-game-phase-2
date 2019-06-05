@@ -1,6 +1,5 @@
 package edu.cnm.deepdive.fizzbuzz.model;
 
-import androidx.annotation.NonNull;
 import java.io.Serializable;
 
 public class Round implements Serializable {
@@ -19,7 +18,6 @@ public class Round implements Serializable {
     this.selection = selection;
   }
 
-  @NonNull
   @Override
   public String toString() {
     return String.format(FORMAT_STRING, value, category, selection);
